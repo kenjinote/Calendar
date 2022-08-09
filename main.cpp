@@ -1,4 +1,4 @@
-#pragma comment(lib, "d2d1.lib")
+ï»¿#pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
 #pragma comment(lib, "windowscodecs.lib")
 
@@ -16,7 +16,7 @@
 #define WM_MONTH_PLUS (WM_APP)
 #define WM_MONTH_MINUS (WM_APP+1)
 
-TCHAR szClassName[] = TEXT("Window");
+TCHAR szClassName[] = TEXT("Calendar");
 HWND m_hwnd;
 ID2D1Factory *m_pD2DFactory;
 IWICImagingFactory *m_pWICFactory;
@@ -33,6 +33,83 @@ ID2D1Bitmap *m_pBitmap;
 DWORD dwYear;
 DWORD dwMonth;
 DWORD dwDay;
+
+class Date {
+private:
+	LANGID langID;
+public:
+	Date()
+	{
+		langID = GetUserDefaultUILanguage();
+	}
+	void GetCalendarName(LPWSTR lpszText) {
+		switch (langID) {
+		case 1033:
+		case 1041: // æ—¥æœ¬èª
+			lstrcpy(lpszText, L"ã‚«ãƒ¬ãƒ³ãƒ€ãƒ¼");
+			break; 
+		case 2052: // ç°¡ä½“å­—
+			lstrcpy(lpszText, L"æ—¥å†");
+			break;
+		case 1036: // ãƒ•ãƒ©ãƒ³ã‚¹èª
+			lstrcpy(lpszText, L"CALENDRIER");
+			break;
+		default: // è‹±èª
+			lstrcpy(lpszText, L"CALENDAR");
+			break;
+		}
+	}
+	void GetYearMonth(LPWSTR lpszText, DWORD dwYear, DWORD dwMonth) {
+		switch (langID) {
+		case 1033:
+		case 1041:
+		case 2052: // ç°¡ä½“å­—
+			wsprintf(lpszText, L"%då¹´ %dæœˆ", dwYear, dwMonth);
+			break;
+		case 1036: // ãƒ•ãƒ©ãƒ³ã‚¹èª
+			{
+				const LPWSTR szMonthFR[] = { L"JANVIER", L"FÃ‰VRIER", L"MARS", L"AVRIL", L"MAI", L"JUIN", L"JUILLET", L"AOÃ›T", L"SEPTEMBRE", L"OCTOBRE", L"NOVEMBRE", L"DÃ‰CEMBRE" };
+				wsprintf(lpszText, L"%d %s", dwYear, szMonthFR[dwMonth - 1]);
+			}
+			break;
+		default:
+			{
+				const LPWSTR szMonthEN[] = { L"January", L"February", L"March", L"April", L"May", L"June", L"July", L"August", L"September", L"October", L"November", L"December" };
+				wsprintf(lpszText, L"%d %s", dwYear, szMonthEN[dwMonth - 1]);
+			}
+			break;
+		}
+	}
+	void GetDayOfWeek(LPWSTR lpszText, DWORD dwIndex) {
+		switch (langID) {
+		case 1033:
+		case 1041:
+			{
+				const LPWSTR szYoubiJP[] = { L"æ—¥", L"æœˆ", L"ç«", L"æ°´", L"æœ¨", L"é‡‘", L"åœŸ" };
+				wsprintf(lpszText, L"%s", szYoubiJP[dwIndex]);
+			}
+			break;
+		case 2052: // ç°¡ä½“å­—
+			{
+				const LPWSTR szYoubiCH[] = { L"å‘¨æ—¥", L"å‘¨ä¸€",L"å‘¨äºŒ",L"å‘¨ä¸‰",L"å‘¨å››",L"å‘¨äº”",L"å‘¨å…­" };
+				wsprintf(lpszText, L"%s", szYoubiCH[dwIndex]);
+			}
+			break;
+		case 1036: // ãƒ•ãƒ©ãƒ³ã‚¹èª
+			{
+				const LPWSTR szYoubiFR[] = { L"Di", L"Lu",L"Ma",L"Me",L"Je",L"Ve",L"Sa" };
+				wsprintf(lpszText, L"%s", szYoubiFR[dwIndex]);
+			}
+			break;
+		default:
+			{
+				const LPWSTR szYoubiEN[] = { L"Sun", L"Mon",L"Tue",L"Wed",L"Thu",L"Fri",L"Sat" };
+				wsprintf(lpszText, L"%s", szYoubiEN[dwIndex]);
+			}
+			break;
+		}
+	}
+};
 
 HRESULT LoadResourceBitmap(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory *pIWICFactory, PCWSTR resourceName, PCWSTR resourceType, UINT destinationWidth, UINT destinationHeight, ID2D1Bitmap **ppBitmap)
 {
@@ -102,7 +179,7 @@ HRESULT LoadResourceBitmap(ID2D1RenderTarget *pRenderTarget, IWICImagingFactory 
 
 HRESULT CreateDeviceIndependentResources()
 {
-	static const FLOAT msc_fontSize = 64;
+	static const FLOAT msc_fontSize = 32;
 	HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
 	if (SUCCEEDED(hr))
 	{
@@ -110,7 +187,7 @@ HRESULT CreateDeviceIndependentResources()
 	}
 	if (SUCCEEDED(hr))
 	{
-		hr = m_pDWriteFactory->CreateTextFormat(L"ƒƒCƒŠƒI", 0, DWRITE_FONT_WEIGHT_ULTRA_BLACK/*DWRITE_FONT_WEIGHT_NORMAL*/, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, msc_fontSize, L"", &m_pTitleTextFormat);
+		hr = m_pDWriteFactory->CreateTextFormat(L"Meiryo", 0, DWRITE_FONT_WEIGHT_ULTRA_BLACK/*DWRITE_FONT_WEIGHT_NORMAL*/, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, msc_fontSize, L"", &m_pTitleTextFormat);
 	}
 	if (SUCCEEDED(hr))
 	{
@@ -172,7 +249,7 @@ void DiscardDeviceResources()
 	m_pBitmap = NULL;
 }
 
-// w’è‚µ‚½Œ‚Ì“ú”‚ğ•Ô‚·
+// æŒ‡å®šã—ãŸæœˆã®æ—¥æ•°ã‚’è¿”ã™
 int NumberOfDays(int year, int month)
 {
 	if (month == 4 || month == 6 || month == 9 || month == 11)
@@ -188,27 +265,28 @@ int NumberOfDays(int year, int month)
 		return 31;
 }
 
-// w’è‚µ‚½Œ‚Ì1“ú‚Ì—j“ú‚ğ•Ô‚·(“ú‚È‚ç0)
+// æŒ‡å®šã—ãŸæœˆã®1æ—¥ã®æ›œæ—¥ã‚’è¿”ã™(æ—¥ãªã‚‰0)
 int GetFirstDayOfWeek(int year, int month)
 {
-	// 1Œ‚Æ2Œ‚ğ‘O”N‚Ì13Œ‚Æ14Œ‚Æ‚µ‚Äˆµ‚¤
+	// 1æœˆã¨2æœˆã‚’å‰å¹´ã®13æœˆã¨14æœˆã¨ã—ã¦æ‰±ã†
 	if (month <= 2)
 	{
 		year -= 1;
 		month += 12;
 	}
-	// —j“ú”Ô†‚ğ•Ô‚·
+	// æ›œæ—¥ç•ªå·ã‚’è¿”ã™
 	return (1 + ((8 + (13 * month)) / 5) + (year + (year / 4) - (year / 100) + (year / 400))) % 7;
 }
 
-// •`‰æŠÖ”
+// æç”»é–¢æ•°
 HRESULT OnRender()
 {
 	HRESULT hr = CreateDeviceResources();
 	if (SUCCEEDED(hr))
 	{
 		static TCHAR szText[128];
-		wsprintf(szText, TEXT("%d”N %dŒ"), dwYear, dwMonth);
+		Date date;
+		date.GetYearMonth(szText, dwYear, dwMonth);
 		D2D1_SIZE_F renderTargetSize = m_pRenderTarget->GetSize();
 		m_pRenderTarget->BeginDraw();
 		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -216,7 +294,6 @@ HRESULT OnRender()
 		D2D1_SIZE_F size = m_pBitmap->GetSize();
 		m_pRenderTarget->DrawBitmap(m_pBitmap, D2D1::RectF(0.0, 0.0, size.width, size.height), 0.4f);
 		m_pRenderTarget->DrawText(szText, lstrlen(szText), m_pTitleTextFormat, D2D1::RectF(0, 0, renderTargetSize.width, renderTargetSize.height), m_pBlackBrush);
-		const TCHAR szYoubi[] = TEXT("“úŒ‰Î…–Ø‹à“y");
 		ID2D1SolidColorBrush *pBrush;
 		SYSTEMTIME systime;
 		GetLocalTime(&systime);
@@ -225,16 +302,16 @@ HRESULT OnRender()
 		dwDay = systime.wDay;
 		for (int i = 0; i < 7; i++)
 		{
-			wsprintf(szText, TEXT("%c"), szYoubi[i]);
-			if (szYoubi[i] == TEXT('“y')) pBrush = m_pBlueBrush;
-			else if (szYoubi[i] == TEXT('“ú')) pBrush = m_pRedBrush;
+			date.GetDayOfWeek(szText, i);
+			if (i == 6) pBrush = m_pBlueBrush;
+			else if (i == 0) pBrush = m_pRedBrush;
 			else pBrush = m_pBlackBrush;
-			m_pRenderTarget->DrawText(szText, lstrlen(szText), m_pTitleTextFormat, D2D1::RectF((renderTargetSize.width / 7)*i, renderTargetSize.height / 8, (renderTargetSize.width / 7)*(i + 1), renderTargetSize.height / 4), pBrush);
+			m_pRenderTarget->DrawText(szText, lstrlen(szText), m_pTitleTextFormat, D2D1::RectF((renderTargetSize.width / 7) * i, renderTargetSize.height / 8, (renderTargetSize.width / 7) * (i + 1), renderTargetSize.height / 4), pBrush);
 		}
-		// Œ»İ‚ÌŒ‚Ì1“ú‚ª‰½—j“ú‚©’²‚×‚é
+		// ç¾åœ¨ã®æœˆã®1æ—¥ãŒä½•æ›œæ—¥ã‹èª¿ã¹ã‚‹
 		int w = GetFirstDayOfWeek(dwYear, dwMonth);
 		if (w == 0)w += 7;
-		// Œ»İ‚ÌŒ‚Ì“ú”‚ğ’²‚×‚é
+		// ç¾åœ¨ã®æœˆã®æ—¥æ•°ã‚’èª¿ã¹ã‚‹
 		const int d = NumberOfDays(dwYear, dwMonth);
 		int prev;
 		if (dwMonth > 1)
@@ -373,10 +450,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			case VK_HOME:
 				SetNow(hWnd);
 				break;
+			case VK_PRIOR:
 			case VK_LEFT:
 			case VK_UP:
 				SendMessage(hWnd, WM_MONTH_MINUS, 0, 0);
 				break;
+			case VK_NEXT:
 			case VK_RIGHT:
 			case VK_DOWN:
 				SendMessage(hWnd, WM_MONTH_PLUS, 0, 0);
@@ -411,14 +490,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst, LPSTR pCmdLine, int nCmdShow)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPreInst, LPWSTR pCmdLine, int nCmdShow)
 {
 	MSG msg;
 	CoInitialize(0);
 	CreateDeviceIndependentResources();
 	WNDCLASS wndclass = { CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance, 0, LoadCursor(0, IDC_ARROW), 0, 0, szClassName };
 	RegisterClass(&wndclass);
-	m_hwnd = CreateWindow(szClassName, TEXT("ƒJƒŒƒ“ƒ_["), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, 0, 0, hInstance, 0);
+	WCHAR szTitle[256];
+	Date date;
+	date.GetCalendarName(szTitle);
+	m_hwnd = CreateWindow(szClassName, szTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, 0, 0, hInstance, 0);
 	ShowWindow(m_hwnd, SW_SHOWDEFAULT);
 	UpdateWindow(m_hwnd);
 	while (GetMessage(&msg, 0, 0, 0))
@@ -434,5 +516,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPreInst, LPSTR pCmdLine, int 
 	m_pTitleTextFormat = NULL;
 	DiscardDeviceResources();
 	CoUninitialize();
-	return msg.wParam;
+	return 0;
 }
