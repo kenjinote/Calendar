@@ -29,7 +29,7 @@ ID2D1SolidColorBrush *m_pBlueBrush;
 ID2D1SolidColorBrush *m_pGrayBrush;
 ID2D1SolidColorBrush *m_pGrayRedBrush;
 ID2D1SolidColorBrush *m_pGrayBlueBrush;
-ID2D1Bitmap *m_pBitmap;
+ID2D1Bitmap *m_pBackgroundBitmap;
 DWORD dwYear;
 DWORD dwMonth;
 DWORD dwDay;
@@ -221,7 +221,7 @@ HRESULT CreateDeviceResources()
 		}
 		if (SUCCEEDED(hr))
 		{
-			hr = LoadResourceBitmap(m_pRenderTarget, m_pWICFactory, MAKEINTRESOURCE(IDR_JPG1), L"JPG", 0, 0, &m_pBitmap);
+			hr = LoadResourceBitmap(m_pRenderTarget, m_pWICFactory, MAKEINTRESOURCE(IDR_JPG1), L"JPG", 0, 0, &m_pBackgroundBitmap);
 		}
 	}
 	return hr;
@@ -245,8 +245,8 @@ void DiscardDeviceResources()
 	m_pGrayRedBrush = NULL;
 	m_pGrayBlueBrush->Release();
 	m_pGrayBlueBrush = NULL;
-	m_pBitmap->Release();
-	m_pBitmap = NULL;
+	m_pBackgroundBitmap->Release();
+	m_pBackgroundBitmap = NULL;
 }
 
 // 指定した月の日数を返す
@@ -284,16 +284,30 @@ HRESULT OnRender()
 	HRESULT hr = CreateDeviceResources();
 	if (SUCCEEDED(hr))
 	{
-		static TCHAR szText[128];
-		Date date;
-		date.GetYearMonth(szText, dwYear, dwMonth);
-		D2D1_SIZE_F renderTargetSize = m_pRenderTarget->GetSize();
+		const D2D1_SIZE_F renderTargetSize = m_pRenderTarget->GetSize();
 		m_pRenderTarget->BeginDraw();
 		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-		D2D1_SIZE_F size = m_pBitmap->GetSize();
-		m_pRenderTarget->DrawBitmap(m_pBitmap, D2D1::RectF(0.0, 0.0, size.width, size.height), 0.4f);
+		const D2D1_SIZE_F size = m_pBackgroundBitmap->GetSize();
+		m_pRenderTarget->DrawBitmap(m_pBackgroundBitmap, D2D1::RectF(0.0, 0.0, size.width, size.height), 0.4f);
+		static TCHAR szText[128];
+		Date date;
+		date.GetYearMonth(szText, dwYear, dwMonth);
 		m_pRenderTarget->DrawText(szText, lstrlen(szText), m_pTitleTextFormat, D2D1::RectF(0, 0, renderTargetSize.width, renderTargetSize.height), m_pBlackBrush);
+		for (int i = 1; i < 7; i++)
+		{
+			// 線分を描画
+			D2D1_POINT_2F start = { (renderTargetSize.width / 7) * i, renderTargetSize.height / 8.0f };
+			D2D1_POINT_2F end = { (renderTargetSize.width / 7) * i, renderTargetSize.height };
+			m_pRenderTarget->DrawLine(start, end, m_pBlackBrush, 1.0F);
+		}
+		for (int i = 1; i <= 7; i++)
+		{
+			// 線分を描画
+			D2D1_POINT_2F start = { 0, (renderTargetSize.height / 8.0f) * i };
+			D2D1_POINT_2F end = { renderTargetSize.width, (renderTargetSize.height / 8.0f) * i };
+			m_pRenderTarget->DrawLine(start, end, m_pBlackBrush, 1.0F);
+		}
 		ID2D1SolidColorBrush *pBrush;
 		SYSTEMTIME systime;
 		GetLocalTime(&systime);
@@ -307,6 +321,13 @@ HRESULT OnRender()
 			else if (i == 0) pBrush = m_pRedBrush;
 			else pBrush = m_pBlackBrush;
 			m_pRenderTarget->DrawText(szText, lstrlen(szText), m_pTitleTextFormat, D2D1::RectF((renderTargetSize.width / 7) * i, renderTargetSize.height / 8, (renderTargetSize.width / 7) * (i + 1), renderTargetSize.height / 4), pBrush);
+
+			{
+				// 線分を描画
+				D2D1_POINT_2F start = { (renderTargetSize.width / 7) * i, renderTargetSize.height / 8.0f };
+				D2D1_POINT_2F end = { (renderTargetSize.width / 7) * i, renderTargetSize.height };
+				m_pRenderTarget->DrawLine(start, end, m_pBlackBrush, 1.0F);
+			}
 		}
 		// 現在の月の1日が何曜日か調べる
 		int w = GetFirstDayOfWeek(dwYear, dwMonth);
@@ -492,10 +513,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPreInst, LPWSTR pCmdLine, int nCmdShow)
 {
-	MSG msg;
-	CoInitialize(0);
+	MSG msg = {};
+	(void)CoInitialize(0);
 	CreateDeviceIndependentResources();
-	WNDCLASS wndclass = { CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance, 0, LoadCursor(0, IDC_ARROW), 0, 0, szClassName };
+	WNDCLASS wndclass = { CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance, LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1)), LoadCursor(0, IDC_ARROW), 0, 0, szClassName };
 	RegisterClass(&wndclass);
 	WCHAR szTitle[256];
 	Date date;

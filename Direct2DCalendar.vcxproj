@@ -150,6 +150,7 @@
     <ResourceCompile Include="res.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icon.ico" />
     <Image Include="res\01.jpg" />
   </ItemGroup>
   <ItemGroup>
