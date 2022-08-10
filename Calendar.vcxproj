@@ -21,8 +21,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9B3ABDDF-8C6B-468E-8086-304B0F42D9B6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Direct2DCalendar</RootNamespace>
+    <RootNamespace>Calendar</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Calendar</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
