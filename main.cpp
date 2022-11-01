@@ -196,7 +196,7 @@ HRESULT CreateDeviceIndependentResources()
 	}
 	if (SUCCEEDED(hr))
 	{
-		CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, reinterpret_cast<void **>(&m_pWICFactory));
+		hr = CoCreateInstance(CLSID_WICImagingFactory, 0, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, reinterpret_cast<void **>(&m_pWICFactory));
 	}
 	return hr;
 }
@@ -289,7 +289,7 @@ HRESULT OnRender()
 		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 		const D2D1_SIZE_F size = m_pBackgroundBitmap->GetSize();
-		m_pRenderTarget->DrawBitmap(m_pBackgroundBitmap, D2D1::RectF(0.0, 0.0, size.width, size.height), 0.4f);
+		m_pRenderTarget->DrawBitmap(m_pBackgroundBitmap, D2D1::RectF(0.0, 0.0, renderTargetSize.width, renderTargetSize.height), 0.4f);
 		static TCHAR szText[128];
 		Date date;
 		date.GetYearMonth(szText, dwYear, dwMonth);
@@ -454,13 +454,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		OnResize(LOWORD(lParam), HIWORD(lParam));
 		break;
-	case WM_GETMINMAXINFO:
-		{
-			MINMAXINFO* lpMMI = (MINMAXINFO*)lParam;
-			lpMMI->ptMaxTrackSize.x = 1024;
-			lpMMI->ptMaxTrackSize.y = 768;
-			return 0;
-		}
 	case WM_MOUSEWHEEL:
 		SendMessage(hWnd, (GET_WHEEL_DELTA_WPARAM(wParam) > 0) ? WM_MONTH_MINUS : WM_MONTH_PLUS, 0, 0);
 		break;
@@ -511,7 +504,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPreInst, LPWSTR pCmdLine, int nCmdShow)
+int WINAPI wWinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR lpCmdLine,
+	_In_ int nShowCmd)
 {
 	MSG msg = {};
 	(void)CoInitialize(0);
